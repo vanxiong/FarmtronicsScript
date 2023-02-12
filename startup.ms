@@ -130,10 +130,10 @@ end function
 // reference: https://www.redblobgames.com/pathfinding/a-star/introduction.html
 // example usage, searchFor("dry",0, 100, startingLocation), searchFor("name","Parsnip", 1000), etc.
 // if startPos is not entered, starting location will be at BOT location
-// numTilesToSearch specify how many tiles to search. If not used, then no limit
+// numTilesToSearch specify how many tiles to search. If not used, then defaults to 500 tiles
 searchForTile = function(tileToLookFor, tileParameter, numTilesToSearch, startPos)
 	if numTilesToSearch == null then 
-		searchLimit = 100
+		searchLimit = 500
 	else
 		searchLimit = numTilesToSearch
 	end if
