@@ -130,7 +130,7 @@ end function
 // reference: https://www.redblobgames.com/pathfinding/a-star/introduction.html
 // example usage, searchFor("dry",0, 100, startingLocation), searchFor("name","Parsnip", 1000), etc.
 // if startPos is not entered, starting location will be at BOT location
-// numTilesToSearch specify how many tiles to search. If not used, then defaults to 500 tiles
+// numTilesToSearch specify how many tiles to search. If not used, then defauts to 500 tiles
 searchForTile = function(tileToLookFor, tileParameter, numTilesToSearch, startPos)
 	if numTilesToSearch == null then 
 		searchLimit = 500
@@ -339,17 +339,26 @@ me.fetchWater = function
 	end if
 end function
 //**********************************************
+// search bot inventory and return the inventory index.
+searchInventory = function (type, typeParameter)
+	for i in range(0,me.inventory.len-1)
+		if me.inventory[i].hasIndex(type) then
+			if me.inventory[i][type]==typeParameter then
+				return i
+			end if
+		end if
+	end for
+end function
+//**********************************************
+// search for any dry spot and water it regardless if there's crop or not
 waterField = function
     startPos = [me.position.x, me.position.y]
-    wateringCanIndex = 2; //change this to where ever the watering can index is supposed to be (2 is default)
-    
+    wateringCanIndex = searchInventory("type","WateringCan")
     state = "watering"
     loop = 1
+	
     while (loop)
         //if there is no water in the watering can
-        //while (me.inventory[wateringCanIndex] == {} or me.inventory[wateringCanIndex].type != "WateringCan" or me.inventory[wateringCanIndex].waterLeft == 0)
-        //  wait
-        //end while
         if me.inventory[wateringCanIndex].waterLeft == 0 then
             state = "fetchWater"
         end if
@@ -399,5 +408,5 @@ end function
 //**********************************************
 // Auto start this every morning or after robot restarts
 if me.isBot then
-    waterField
+    //waterField
 end if
