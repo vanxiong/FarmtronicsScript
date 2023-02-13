@@ -471,6 +471,12 @@ clearField = function(clearTree)
 	while loop
 		wait(0.01)
 		if state == "clearing" then
+			if location == null then 
+                location = searchForTile("stump",1,area[i])
+            end if
+			if location == null then 
+				if clearTree then location = searchForTile("name","Tree",area[i])
+            end if
 			if location == null then
 				location = searchForTile("name","Twig",area[i])
 			end if
@@ -479,12 +485,6 @@ clearField = function(clearTree)
             end if
 			if location == null then 
                 location = searchForTile("name","Weeds",area[i])
-            end if
-			if location == null then 
-                location = searchForTile("stump",1,area[i])
-            end if
-			if location == null then 
-				if clearTree then location = searchForTile("name","Tree",area[i])
             end if
 			if location != null then
 				i = 0
@@ -507,40 +507,8 @@ clearField = function(clearTree)
         end if
 
 	end while
-    
-
 end function
 
-
-asdf = function
-
-		if state == "Stump" then
-            location = searchForTile("stump",1,3000)
-            if location == null then 
-                state = "Stone"
-            else
-                me.pathTo(location,1)
-                me.clearAhead
-            end if
-		end if
-			
-		if state == "Stone" then
-            location = searchForTile("name","Stone",3000)
-            if location == null then 
-                state = "cleanUp"
-            else
-                me.pathTo(location,1)
-                me.clearAhead
-            end if
-		end if
-			
-        if state == "cleanUp" then  
-            loop = 0
-            me.pathTo(startPos,0)
-            me.turnSouth
-			world.chat("Field cleared")
-        end if
-end function
 //**********************************************
 //**********************************************
 // Auto start this every morning or after robot restarts
