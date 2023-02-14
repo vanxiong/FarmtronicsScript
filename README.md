@@ -1,4 +1,5 @@
 # FarmtronicsScript
+This is a script for a MOD called Farmtronics for the game STARDEW VALLEY
 ********************************************************************************************
 When activating Bot, it will display in chat the following:
 * "HOLD KEY FOR UP TO 1 SEC TO ACTIVATE"
