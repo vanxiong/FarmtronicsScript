@@ -592,6 +592,7 @@ end function
 //**********************************************
 // Auto start this every morning or after robot restarts
 me.helpInstruction = function
+	world.chat("HOLD KEY FOR UP TO 1 SEC TO ACTIVATE")
 	world.chat("F1: Water Field")
 	world.chat("F2: Remote Control,  While in Remote-Control Mode:") 
 	world.chat("  D-arrow: movement, numPad-1: Move-only-Mode")
