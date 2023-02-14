@@ -157,15 +157,19 @@ searchForTile = function(tileToLookFor, tileParameter, numTilesToSearch, startPo
 			wait(globals.waitTime)
 		end if
 		numOfLoop = numOfLoop + 1
+        searched = searched + 1
         if searched>searchLimit then 
 			//print "Could not find " + tileToLookFor + " : " + tileParameter
 			return null
 		end if
-        searched = searched + 1
         currentNode = frontier.pull
         // ****** this can be optimize to not check previously checked location
         neighborTiles = neighbors(currentNode) //save coordinate of the neihboring tiles
         for i in range(0,neighborTiles.len-1) //check tile around current node
+            if checkedNode.hasIndex(neighborTiles[i]) then // if node already check, continue to next loop
+                continue
+            end if
+		
             if (farm.tile(neighborTiles[i][0],neighborTiles[i][1])) then // if tile has info
 			
 				// this if block is to make sure the path to the tile is reachable
@@ -453,7 +457,11 @@ waterField = function
             me.turnSouth
 			world.chat("Field watered")
         end if
-    
+		
+		if key.pressed("end") then
+			world.chat("Stopped watering field")
+			break
+		end if
     end while
 end function
 //**********************************************
@@ -506,12 +514,113 @@ clearField = function(clearTree)
 			world.chat("Field cleared")
         end if
 
+		if key.pressed("end") then
+			world.chat("Stopped clearing field")
+			break
+		end if
 	end while
+end function
+
+remoteControl = function(onOff)
+	action = function(mode)
+		if mode == "demolish" then
+			me.clearAhead
+		else if mode == "water" then
+			if me.ahead == null then
+				// do nothing if null
+			else if me.ahead.hasIndex("dry") then
+				if me.ahead["dry"]==1 then me.water
+			end if
+		end if
+	end function
+
+	wateringCanIndex = searchInventory("type","WateringCan")
+	mode = "movementOnly" //movementOnly, demolish, water
+	if onOff then
+		world.chat("Remote Control Mode ON")
+		world.chat("Mode Activated: Move-Only")
+		while(1)
+			wait (0.02)
+		
+			if me.inventory[wateringCanIndex].waterLeft == 0 then
+                me.fetchWater
+            end if
+		
+			if key.pressed("[1]") then
+				if mode != "movementOnly" then world.chat("Activated: Move-Only Mode")
+				mode = "movementOnly"
+			end if
+			if key.pressed("[2]") then
+				if mode != "water" then world.chat("Activated: Watering Mode")
+				mode = "water"
+			end if
+			if key.pressed("[3]") then
+				if mode != "demolish" then world.chat("Activated: Demolish Mode")
+				mode = "demolish"
+			end if
+			
+			if key.pressed("left") then
+				me.turnWest
+				action(mode)
+				me.forward
+			end if
+			if key.pressed("right") then
+				me.turnEast
+				action(mode)
+				me.forward
+			end if
+			if key.pressed("up") then
+				me.turnNorth
+				action(mode)
+				me.forward
+			end if
+			if key.pressed("down") then
+				me.turnSouth
+				action(mode)
+				me.forward
+			end if
+			if key.pressed("end") or key.pressed("home") or key.pressed("f1") or key.pressed("f3") or key.pressed("f5") or key.pressed("f6") then
+				world.chat("Remote Control Mode OFF")
+				break
+			end if
+		end while
+	end if
+
 end function
 
 //**********************************************
 //**********************************************
 // Auto start this every morning or after robot restarts
+me.helpInstruction = function
+	world.chat("F1: Water Field")
+	world.chat("F2: Remote Control,  While in Remote-Control Mode:") 
+	world.chat("  D-arrow: movement, numPad-1: Move-only-Mode")
+	world.chat("  numPad-2: Watering-mode,  numPad-3: Demolish-mode")
+	world.chat("F3: Go to owner")
+	world.chat("F5: Clear land excluding trees")
+	world.chat("F6: Clear land INCLUDING trees")
+	world.chat("END key: Terminate most of these programs")
+	world.chat("Hold H to repeat these instructions")
+end function
+
 if me.isBot then
-    //waterField
+	homePosition = [me.position.x,me.position.y]
+	me.helpInstruction
+	while(1)
+		wait(1)
+		if key.pressed("home") then
+			world.chat("Returning home at " + homePosition)
+			me.pathTo(homePosition,0)
+		end if
+		if key.pressed("f1") then waterField
+		if key.pressed("f2") then remoteControl(1)
+		if key.pressed("f3") then
+			characterLocation = searchForTile("name",me.owner,5000)
+			world.chat("Going to " + me.owner +" at location " + homePosition)
+			me.pathTo(characterLocation,1)
+		end if
+		if key.pressed("f5") then clearField(0)      // clear excluding trees
+		if key.pressed("f6") then clearField(1)		// clear land including trees
+		if key.pressed("h") then me.helpInstruction
+	end while
 end if
