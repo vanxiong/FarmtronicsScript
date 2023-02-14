@@ -524,13 +524,23 @@ end function
 remoteControl = function(onOff)
 	action = function(mode)
 		if mode == "demolish" then
-			me.clearAhead
+			if me.ahead then 
+				me.clearAhead
+			else
+				me.forward
+			end if
 		else if mode == "water" then
 			if me.ahead == null then
-				// do nothing if null
+				me.forward
 			else if me.ahead.hasIndex("dry") then
-				if me.ahead["dry"]==1 then me.water
+				if me.ahead["dry"]==1 then 
+					me.water
+				else
+					me.forward
+				end if
 			end if
+		else if mode == "movementOnly" then
+			me.forward
 		end if
 	end function
 
@@ -562,22 +572,19 @@ remoteControl = function(onOff)
 			if key.pressed("left") then
 				me.turnWest
 				action(mode)
-				me.forward
 			end if
 			if key.pressed("right") then
 				me.turnEast
 				action(mode)
-				me.forward
 			end if
 			if key.pressed("up") then
 				me.turnNorth
 				action(mode)
-				me.forward
 			end if
 			if key.pressed("down") then
 				me.turnSouth
 				action(mode)
-				me.forward
+
 			end if
 			if key.pressed("end") or key.pressed("home") or key.pressed("f1") or key.pressed("f3") or key.pressed("f5") or key.pressed("f6") then
 				world.chat("Remote Control Mode OFF")
@@ -619,6 +626,7 @@ if me.isBot then
 			characterLocation = searchForTile("name",me.owner,5000)
 			world.chat("Going to " + me.owner +" at location " + homePosition)
 			me.pathTo(characterLocation,1)
+			me.turnSouth
 		end if
 		if key.pressed("f5") then clearField(0)      // clear excluding trees
 		if key.pressed("f6") then clearField(1)		// clear land including trees
