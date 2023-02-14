@@ -1,16 +1,16 @@
 # FarmtronicsScript
 ********************************************************************************************
 When activating Bot, it will display in chat the following:
-	"HOLD KEY FOR UP TO 1 SEC TO ACTIVATE"
-	"F1: Water Field"
-	"F2: Remote Control,  While in Remote-Control Mode:")
-	"  D-arrow: movement, numPad-1: Move-only-Mode"
-	"  numPad-2: Watering-mode,  numPad-3: Demolish-mode"
-	"F3: Go to owner"
-	"F5: Clear land excluding trees"
-	"F6: Clear land INCLUDING trees"
-	"END key: Terminate most of these programs"
-	"Hold H to repeat these instructions"
+   "HOLD KEY FOR UP TO 1 SEC TO ACTIVATE"
+   "F1: Water Field"
+   "F2: Remote Control,  While in Remote-Control Mode:")
+   "  D-arrow: movement, numPad-1: Move-only-Mode"
+   "  numPad-2: Watering-mode,  numPad-3: Demolish-mode"
+   "F3: Go to owner"
+   "F5: Clear land excluding trees"
+   "F6: Clear land INCLUDING trees"
+   "END key: Terminate most of these programs"
+   "Hold H to repeat these instructions"
 	
 The script polls the key.pressed function every 1 second so users may have to to hold these keys for up to 1 second before it registers.
 
