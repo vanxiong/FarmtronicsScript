@@ -1,10 +1,14 @@
-// saved 2/10/2023
+
 // globals
 waterLocation = []
 wellLocation = []
 seletectedWaterLocation = []
 waitTime = 0.0001 // in seconds
 numOfLoopToWait = 10
+clearTree = 0
+clearHoeDirt = 0
+
+
 //**********************************************
 me.till = function
     me.select "Hoe"
@@ -343,6 +347,7 @@ me.pathTo = function(endPos,stopBeforeLastNode)
             numOfTries = numOfTries + 1
             if numOfTries >= maxTries then break
         end if
+		if key.pressed("end") then break
     end while
     if stopBeforeLastNode then  //make bot turn towards the destination
         if (me.position.x - coordinate[0]>0) then 
@@ -467,7 +472,7 @@ end function
 //**********************************************
 // clears Twig, stones, weeds, stump, and tree if clearTree = 1.
 // may clear player planted trees so use with caution. Have not tested.
-clearField = function(clearTree)
+clearField = function
     startPos = [me.position.x, me.position.y]
 	world.chat("Clearing Land")
 	loop = 1
@@ -478,6 +483,28 @@ clearField = function(clearTree)
 	numOfStages = 6
 	while loop
 		wait(0.01)
+		// key press to determine what to clear
+		if key.pressed("up") then
+			globals.clearHoeDirt = 0
+			globals.clearTree = 0
+			world.chat("Clearing debris only")
+			break
+		end if
+		if key.pressed("left") then
+			if globals.clearTree == 0 then world.chat("And trees")
+			globals.clearTree = 1
+		end if
+		if key.pressed("right") then
+			if globals.clearHoeDirt == 0 then world.chat("And tilled lands")
+			globals.clearHoeDirt = 1
+		end if
+		if key.pressed("end") then
+			globals.clearHoeDirt = 0
+			globals.clearTree = 0
+			world.chat("Stopped clearing field")
+			break
+		end if
+		
 		if state == "clearing" then
 			if location == null then 
                 location = searchForTile("stump",1,area[i])
@@ -493,6 +520,9 @@ clearField = function(clearTree)
             end if
 			if location == null then 
                 location = searchForTile("name","Weeds",area[i])
+            end if
+			if location == null then 
+                if clearHoeDirt then location = searchForTile("type","HoeDirt",area[i])
             end if
 			if location != null then
 				i = 0
@@ -513,14 +543,11 @@ clearField = function(clearTree)
             me.turnSouth
 			world.chat("Field cleared")
         end if
-
-		if key.pressed("end") then
-			world.chat("Stopped clearing field")
-			break
-		end if
 	end while
 end function
-
+//**********************************************
+// Remote control the robot with directional keys
+// Choose different mode to walk-only, water land, DESTROY!!!
 remoteControl = function(onOff)
 	action = function(mode)
 		if mode == "demolish" then
@@ -586,7 +613,7 @@ remoteControl = function(onOff)
 				action(mode)
 
 			end if
-			if key.pressed("end") or key.pressed("home") or key.pressed("f1") or key.pressed("f3") or key.pressed("f5") or key.pressed("f6") then
+			if key.pressed("end") or key.pressed("home") or key.pressed("f1") or key.pressed("f2") or key.pressed("f5") or key.pressed("f6") then
 				world.chat("Remote Control Mode OFF")
 				break
 			end if
@@ -596,24 +623,120 @@ remoteControl = function(onOff)
 end function
 
 //**********************************************
+// Till land in a rectangular shape using corner 1 and corner 2
+tillField = function(firstCorner, secondCorner,untill)
+	//check if coordinate is valid
+	if(firstCorner isa list and secondCorner isa list) then
+		 //continue as normal
+	else
+		print("not a valid coordinate")
+		return
+	end if
+	deltaX = secondCorner[0]-firstCorner[0]
+	deltaY = secondCorner[1]-firstCorner[1]
+	fieldMap = {}
+	for i in range(0,deltaX)
+		for j in range(0, deltaY)
+			x = firstCorner[0] + i
+			y = firstCorner[1] + j
+			wait(0.1)
+			if key.pressed("end") then 
+				world.chat("Tillage cancelled.")
+				return
+			end if
+			if untill then
+				if farm.tile(x,y) != null then
+					if farm.tile(x,y).hasIndex("type") then
+						if farm.tile(x,y)["type"]=="HoeDirt" then
+							me.pathTo([x,y],1)
+							me.clearAhead
+						end if
+					end if
+				end if
+			else 
+				if farm.tile(x,y) == null then
+					world.chat("HELLO:"+[x,y])
+					me.pathTo([x,y],1)
+					me.till
+				end if
+			end if
+		end for
+	end for
+end function
+
+tillMode = function
+	world.chat("Till-mode Activated")
+	confirm = 0
+	while(1)
+		wait(0.1)
+		if key.pressed("left") then 
+			firstCorner = searchForTile("name",me.owner,5000)
+			world.chat("Till start location selected at" + firstCorner)
+			wait(1)
+		end if
+		if key.pressed("right") then 
+			secondCorner = searchForTile("name",me.owner,5000)
+			world.chat("Till end location selected at" + secondCorner)
+			wait(1)
+		end if
+		if key.pressed("up") then 
+			if confirm == 0 then
+				world.chat("Press UP again to confirm untilling from " + firstCorner + " to " + secondCorner + ".")
+				confirm = 1
+				wait(1)
+			else 
+				confirm = 0
+				world.chat("Untilling land from" + firstCorner + " to " + secondCorner + ".")
+				tillField(firstCorner,secondCorner,1)
+				wait(1)	
+			end if
+		end if
+		if key.pressed("down") then 
+			world.chat("Tilling land from" + firstCorner + " to " + secondCorner + ".")
+			tillField(firstCorner,secondCorner,0)
+			wait(1)	
+		end if
+		if key.pressed("end") then 
+			world.chat("Exiting Till-Mode.")
+			break
+		end if
+	end while
+end function
+
+
+//**********************************************
 //**********************************************
 // Auto start this every morning or after robot restarts
 me.helpInstruction = function
 	world.chat("HOLD KEY FOR UP TO 1 SEC TO ACTIVATE")
 	world.chat("F1: Water Field")
-	world.chat("F2: Remote Control,  While in Remote-Control Mode:") 
-	world.chat("  D-arrow: movement, numPad-1: Move-only-Mode")
-	world.chat("  numPad-2: Watering-mode,  numPad-3: Demolish-mode")
-	world.chat("F3: Go to owner")
-	world.chat("F5: Clear land excluding trees")
-	world.chat("F6: Clear land INCLUDING trees")
+	world.chat("F2: Go to owner")
+	wait(10)
+	world.chat("F3: Remote Control,  While in Remote-Control Mode:") 
+	world.chat("  D-arrow: movement") 
+	world.chat("  numPad-1: Move-only-Mode")
+	world.chat("  numPad-2: Watering-mode")
+	world.chat("  numPad-3: Demolish-mode")
+	wait(10)
+	world.chat("F5: Tillage mode:")
+	world.chat("  LEFT key: set corner 1 at player location")
+	world.chat("  RIGHT key: set corner 2 at player location")
+	world.chat("  DOWN key: till from corner 1 to corner 2")
+	world.chat("  UP key: untill from corner 1 to corner 2")
+	wait(10)
+	world.chat("F6: Clear land, while robot in this mode:")
+	world.chat("  UP key: clear debris only (default)")
+	world.chat("  LEFT key: include tree")
+	world.chat("  RIGHT key: include tilled land")
+	wait(10)
 	world.chat("END key: Terminate most of these programs")
+	world.chat("HOME key: Go to location where bot was placed down")
 	world.chat("Hold H to repeat these instructions")
 end function
 
 if me.isBot then
 	homePosition = [me.position.x,me.position.y]
-	me.helpInstruction
+	world.chat("Hold H for instruction")
 	while(1)
 		wait(1)
 		if key.pressed("home") then
@@ -621,15 +744,15 @@ if me.isBot then
 			me.pathTo(homePosition,0)
 		end if
 		if key.pressed("f1") then waterField
-		if key.pressed("f2") then remoteControl(1)
-		if key.pressed("f3") then
+		if key.pressed("f2") then
 			characterLocation = searchForTile("name",me.owner,5000)
-			world.chat("Going to " + me.owner +" at location " + homePosition)
+			world.chat("Going to " + me.owner +" at location " + characterLocation)
 			me.pathTo(characterLocation,1)
 			me.turnSouth
 		end if
-		if key.pressed("f5") then clearField(0)      // clear excluding trees
-		if key.pressed("f6") then clearField(1)		// clear land including trees
+		if key.pressed("f3") then remoteControl(1)
+		if key.pressed("f5") then tillMode 
+		if key.pressed("f6") then clearField
 		if key.pressed("h") then me.helpInstruction
 	end while
 end if
