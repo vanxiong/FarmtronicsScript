@@ -454,23 +454,19 @@ waterField = function
         end if
 	
         if state == "watering" then
-			neighborTiles = neighbors([me.position.x,me.position.y])
+			neighborTiles = neighbors([me.position.x,me.position.y]) //check if neigboring tiles are dry
 			for i in range(0,neighborTiles.len-1)
 				if farm.tile(neighborTiles[i][0],neighborTiles[i][1]) then
 					if farm.tile(neighborTiles[i][0],neighborTiles[i][1]).hasIndex("dry") then
 						if farm.tile(neighborTiles[i][0],neighborTiles[i][1])["dry"] == 1 then
+							// if they're dry, water them
 							me.pathTo([neighborTiles[i][0],neighborTiles[i][1]],1)
 							me.water
-						else
-							state = "searchDry"
 						end if
-					else
-						state = "searchDry"
 					end if
-				else
-					state = "searchDry"
 				end if
 			end for
+			// keeps the robot facing the direction that it was searching for. 
 			if direction == 0 then // facing north
 				me.turnNorth
 			else if direction == 1 then // facing east
@@ -484,8 +480,14 @@ waterField = function
 				if me.twohead.hasIndex("dry") then
 					if me.twohead["dry"] == 1 then
 						me.forward
+					else
+						state = "searchDry"
 					end if
+				else
+					state = "searchDry"
 				end if
+			else
+				state = "searchDry"
 			end if
 		end if
         
