@@ -10,7 +10,11 @@ When activating Bot, it will display in chat the following:
 	* "  ***numPad-1***: Move-only-Mode"
 	* "  ***numPad-2***: Watering-mode"  
 	* "  ***numPad-3***: Demolish-mode"
-* "***F5***: Clear land excluding trees"
+* "***F5***: Tillage mode:"
+	* "  ***LEFT*** key: set corner 1 at player location")
+	* "  ***RIGHT*** key: set corner 2 at player location")
+	* "  ***DOWN*** key: till from corner 1 to corner 2")
+	* "  ***UP*** key: untill from corner 1 to corner 2")
 * "***F6***: Clear land, while robot in this mode:"
 	* "  ***UP*** key: clear debris only (default)")
 	* "  ***LEFT*** key: include tree")
