@@ -11,14 +11,14 @@ When activating Bot, it will display in chat the following:
 	* "  ***numPad-2***: Watering-mode"  
 	* "  ***numPad-3***: Demolish-mode"
 * "***F5***: Tillage mode:"
-	* "  ***LEFT*** key: set corner 1 at player location")
-	* "  ***RIGHT*** key: set corner 2 at player location")
-	* "  ***DOWN*** key: till from corner 1 to corner 2")
-	* "  ***UP*** key: untill from corner 1 to corner 2")
+	* "  ***LEFT*** key: set corner 1 at player location"
+	* "  ***RIGHT*** key: set corner 2 at player location"
+	* "  ***DOWN*** key: till from corner 1 to corner 2"
+	* "  ***UP*** key: untill from corner 1 to corner 2"
 * "***F6***: Clear land, while robot in this mode:"
-	* "  ***UP*** key: clear debris only (default)")
-	* "  ***LEFT*** key: include tree")
-	* "  ***RIGHT*** key: include tilled land")
+	* "  ***UP*** key: clear debris only (default)"
+	* "  ***LEFT*** key: include tree"
+	* "  ***RIGHT*** key: include tilled land"
 * "***END*** key: Terminate most of these programs"
 * "***HOME*** key: Go to location where bot was placed down"
 * "Hold ***H*** to repeat these instructions"
@@ -39,7 +39,7 @@ The script polls the key.pressed function every 1 second so users may have to to
 	* ***startPos***: starting location of search as a list. Defaults to bot location if not passed in
 * ***me.fetchWater*** : command the bot to look for the closest water source
 * ***waterField*** : command the bot to water dry tilled land
-* ***clearField*** : commands the bot to clear the land of rocks, weeds, stumps, twigs, and optionally trees and optionally tilled tiles (see above)
+* ***clearField*** : commands the bot to clear the land of rocks, weeds, stumps, twigs, and optionally trees and optionally tilled tiles (directional key to selection what to destroy)
 
 
 ********************************************************************************************
