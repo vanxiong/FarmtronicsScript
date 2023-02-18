@@ -25,6 +25,23 @@ me.plant = function(seedName)
     me.placeItem
 end function
 //**********************************************
+me.twohead = function
+    if me.facing == 0 then       //north
+        x = me.position.x
+		y = me.position.y-2
+    else if me.facing == 1 then  //east
+        x = me.position.x+2
+		y = me.position.y              
+    else if me.facing == 2 then  //south
+        x = me.position.x
+		y = me.position.y+2          
+    else if me.facing == 3 then  //west
+        x = me.position.x-2
+		y = me.position.y
+    end if
+	return farm.tile(x,y)
+end function
+//**********************************************
 me.turnNorth = function
     //direction bot is facing: 0=north, 1=east, 2=south, 3=west
     if me.facing == 0 then       //north
@@ -431,6 +448,7 @@ waterField = function
                 state = "cleanUp"
             else
                 me.pathTo(location,1)
+				direction = me.facing
                 state = "watering"
             end if
         end if
@@ -441,7 +459,7 @@ waterField = function
 				if farm.tile(neighborTiles[i][0],neighborTiles[i][1]) then
 					if farm.tile(neighborTiles[i][0],neighborTiles[i][1]).hasIndex("dry") then
 						if farm.tile(neighborTiles[i][0],neighborTiles[i][1])["dry"] == 1 then
-							 me.pathTo([neighborTiles[i][0],neighborTiles[i][1]],1)
+							me.pathTo([neighborTiles[i][0],neighborTiles[i][1]],1)
 							me.water
 						else
 							state = "searchDry"
@@ -453,7 +471,22 @@ waterField = function
 					state = "searchDry"
 				end if
 			end for
-			me.forward
+			if direction == 0 then // facing north
+				me.turnNorth
+			else if direction == 1 then // facing east
+				me.turnEast
+			else if direction == 2 then // facing south
+				me.turnSouth
+			else // facing west
+				me.turnWest
+			end if
+			if me.twohead then // ensure two tile ahead is not null
+				if me.twohead.hasIndex("dry") then
+					if me.twohead["dry"] == 1 then
+						me.forward
+					end if
+				end if
+			end if
 		end if
         
         if state == "fetchWater" then
