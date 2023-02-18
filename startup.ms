@@ -101,7 +101,7 @@ me.goto = function(x,y)
     stepy = abs(stepy)
     
     while stepx>0 or stepy>0
-		wait(0.001)
+		wait(0.01)
         if stepx>0 then
             if dirx == "left" then
                 me.turnWest
@@ -245,7 +245,7 @@ pathfinding = function (startNode, endNode)
 	if(startNode isa list and endNode isa list) then
 		 //continue as normal
 	else
-		print("not a valid coordinate")
+		world.chat("not a valid coordinate for path")
 		return [[me.position.x,me.position.y]]
 	end if
 	
@@ -415,25 +415,46 @@ end function
 waterField = function
     startPos = [me.position.x, me.position.y]
     wateringCanIndex = searchInventory("type","WateringCan")
-    state = "watering"
+    state = "searchDry"
 	world.chat("Watering field")
     loop = 1
     while (loop)
+		wait(0.01)
         //if there is no water in the watering can
         if me.inventory[wateringCanIndex].waterLeft == 0 then
             state = "fetchWater"
         end if
     
-        if state == "watering" then
-            location = searchForTile("dry",1,1000) // change this to fit your field, 200 tiles is approximately 10-11 tile radius
+        if state == "searchDry" then
+            location = searchForTile("dry",1,1000)
             if location == null then 
                 state = "cleanUp"
             else
                 me.pathTo(location,1)
-                me.water
+                state = "watering"
             end if
-            
         end if
+	
+        if state == "watering" then
+			neighborTiles = neighbors([me.position.x,me.position.y])
+			for i in range(0,neighborTiles.len-1)
+				if farm.tile(neighborTiles[i][0],neighborTiles[i][1]) then
+					if farm.tile(neighborTiles[i][0],neighborTiles[i][1]).hasIndex("dry") then
+						if farm.tile(neighborTiles[i][0],neighborTiles[i][1])["dry"] == 1 then
+							 me.pathTo([neighborTiles[i][0],neighborTiles[i][1]],1)
+							me.water
+						else
+							state = "searchDry"
+						end if
+					else
+						state = "searchDry"
+					end if
+				else
+					state = "searchDry"
+				end if
+			end for
+			me.forward
+		end if
         
         if state == "fetchWater" then
             // save position so we can come back to it
@@ -488,7 +509,6 @@ clearField = function
 			globals.clearHoeDirt = 0
 			globals.clearTree = 0
 			world.chat("Clearing debris only")
-			break
 		end if
 		if key.pressed("left") then
 			if globals.clearTree == 0 then world.chat("And trees")
@@ -627,9 +647,14 @@ end function
 tillField = function(firstCorner, secondCorner,untill)
 	//check if coordinate is valid
 	if(firstCorner isa list and secondCorner isa list) then
+		if(firstCorner.len==2  and secondCorner.len==2) then
 		 //continue as normal
+		else
+			 world.chat("not a valid coordinate")
+			return
+		end if
 	else
-		print("not a valid coordinate")
+		world.chat("not a valid coordinate")
 		return
 	end if
 	deltaX = secondCorner[0]-firstCorner[0]
@@ -655,7 +680,6 @@ tillField = function(firstCorner, secondCorner,untill)
 				end if
 			else 
 				if farm.tile(x,y) == null then
-					world.chat("HELLO:"+[x,y])
 					me.pathTo([x,y],1)
 					me.till
 				end if
@@ -667,6 +691,8 @@ end function
 tillMode = function
 	world.chat("Till-mode Activated")
 	confirm = 0
+	firstCorner = null
+	secondCorner = null
 	while(1)
 		wait(0.1)
 		if key.pressed("left") then 
