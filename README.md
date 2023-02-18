@@ -39,7 +39,7 @@ The script polls the key.pressed function every 1 second so users may have to to
 	* ***startPos***: starting location of search as a list. Defaults to bot location if not passed in
 * ***me.fetchWater*** : command the bot to look for the closest water source
 * ***waterField*** : command the bot to water dry tilled land
-* ***clearField(includeTree)*** : commands the bot to clear the land of rocks, weeds, stumps, twigs, and optionally trees if includeTree = 1
+* ***clearField*** : commands the bot to clear the land of rocks, weeds, stumps, twigs, and optionally trees and optionally tilled tiles (see above)
 
 
 ********************************************************************************************
