@@ -762,6 +762,7 @@ end function
 
 if me.isBot then
 	homePosition = [me.position.x,me.position.y]
+	waterField
 	world.chat("Hold H for instruction")
 	while(1)
 		wait(1)
