@@ -98,6 +98,57 @@ me.turnWest = function
     end if
 end function
 //**********************************************
+me.moveToNextAvailableTile = function
+	//check west
+	if farm.tile(me.position.x-1,me.position.y)==null then // tile is empty
+		me.turnWest
+		me.forward
+		return
+	else if farm.tile(me.position.x-1,me.position.y).hasIndex("passable") then 
+		if farm.tile(me.position.x-1,me.position.y).passable == 1 then // tile is not empty but passable
+			me.turnWest
+			me.forward
+			return
+		end if
+	end if
+	//check north
+	if farm.tile(me.position.x,me.position.y-1)==null then // tile is empty
+		me.turnNorth
+		me.forward
+		return
+	else if farm.tile(me.position.x,me.position.y-1).hasIndex("passable") then 
+		if farm.tile(me.position.x,me.position.y-1).passable == 1 then // tile is not empty but passable
+			me.turnNorth
+			me.forward
+			return
+		end if
+	end if
+	//check east
+	if farm.tile(me.position.x+1,me.position.y)==null then // tile is empty
+		me.turnEast
+		me.forward
+		return
+	else if farm.tile(me.position.x+1,me.position.y).hasIndex("passable") then 
+		if farm.tile(me.position.x+1,me.position.y).passable == 1 then // tile is not empty but passable
+			me.turnEast
+			me.forward
+			return
+		end if
+	end if
+	//check south
+	if farm.tile(me.position.x,me.position.y+1)==null then // tile is empty
+		me.turnSouth
+		me.forward
+		return
+	else if farm.tile(me.position.x,me.position.y+1).hasIndex("passable") then 
+		if farm.tile(me.position.x,me.position.y+1).passable == 1 then // tile is not empty but passable
+			me.turnSouth
+			me.forward
+			return
+		end if
+	end if
+end function
+//**********************************************
 me.goto = function(x,y)
     stepx = me.position.x - x
     stepy = me.position.y - y
@@ -695,8 +746,11 @@ tillField = function(firstCorner, secondCorner,untill)
 	deltaX = secondCorner[0]-firstCorner[0]
 	deltaY = secondCorner[1]-firstCorner[1]
 	fieldMap = {}
+	startY = 0
+	endY = deltaY
+	tempY = 0
 	for i in range(0,deltaX)
-		for j in range(0, deltaY)
+		for j in range(startY, endY)
 			x = firstCorner[0] + i
 			y = firstCorner[1] + j
 			wait(0.1)
@@ -704,7 +758,14 @@ tillField = function(firstCorner, secondCorner,untill)
 				world.chat("Tillage cancelled.")
 				return
 			end if
-			if untill then
+			if farm.tile(x,y) != null then // check to see if bot is standing on the tile
+				if farm.tile(x,y).hasIndex("type") then
+					if farm.tile(x,y)["type"] == "BotObject" then
+						me.moveToNextAvailableTile
+					end if
+				end if
+			end if
+			if untill then // if untill is selected, then untill land
 				if farm.tile(x,y) != null then
 					if farm.tile(x,y).hasIndex("type") then
 						if farm.tile(x,y)["type"]=="HoeDirt" then
@@ -713,18 +774,21 @@ tillField = function(firstCorner, secondCorner,untill)
 						end if
 					end if
 				end if
-			else 
+			else // else till the land
 				if farm.tile(x,y) == null then
 					me.pathTo([x,y],1)
 					me.till
 				end if
 			end if
 		end for
+		tempY = startY
+		startY = endY
+		endY = tempY
 	end for
 end function
 
 tillMode = function
-	world.chat("Till-mode Activated")
+	world.chat("Tillage-mode Activated")
 	confirm = 0
 	firstCorner = null
 	secondCorner = null
@@ -758,7 +822,7 @@ tillMode = function
 			wait(1)	
 		end if
 		if key.pressed("end") then 
-			world.chat("Exiting Till-Mode.")
+			world.chat("Exiting Tillage-Mode.")
 			break
 		end if
 	end while
@@ -769,7 +833,7 @@ end function
 //**********************************************
 // Auto start this every morning or after robot restarts
 me.helpInstruction = function
-	world.chat("HOLD KEY FOR UP TO 1 SEC TO ACTIVATE")
+	world.chat("HOLD KEY FOR UP TO 1/2 SEC TO ACTIVATE")
 	world.chat("F1: Water Field")
 	world.chat("F2: Go to owner")
 	wait(10)
@@ -800,7 +864,7 @@ if me.isBot then
 	waterField
 	world.chat("Hold H for instruction")
 	while(1)
-		wait(1)
+		wait(0.3)
 		if key.pressed("home") then
 			world.chat("Returning home at " + homePosition)
 			me.pathTo(homePosition,0)
