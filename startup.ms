@@ -5,9 +5,7 @@ wellLocation = []
 seletectedWaterLocation = []
 waitTime = 0.0001 // in seconds
 numOfLoopToWait = 10
-clearTree = 0
-clearHoeDirt = 0
-
+clearMode = "debris"
 
 //**********************************************
 me.till = function
@@ -201,12 +199,18 @@ neighbors = function (coordinate)
     return neighbors
 end function
 //**********************************************************************************
-// uses Breadth First Search Algorithm to search for tiles. Resource intensive if area is large
-// reference: https://www.redblobgames.com/pathfinding/a-star/introduction.html
-// example usage, searchFor("dry",0, 100, startingLocation), searchFor("name","Parsnip", 1000), etc.
-// if startPos is not entered, starting location will be at BOT location
-// numTilesToSearch specify how many tiles to search. If not used, then defauts to 500 tiles
-searchForTile = function(tileToLookFor, tileParameter, numTilesToSearch, startPos)
+// uses Breadth First Search Algorithm to search for tile. Returns path to tile. Resource intensive if area is large
+// reference: https://www.redblobgames.com/pathfinding/tower-defense/#diagram-parents
+// Example usage, searchFor("dry",0, 100, startingLocation), searchFor("name","Parsnip", 1000), etc.
+// If startPos is not entered, starting location will be at BOT location
+// - tileToLookFor = "waterSource" is a special use case to find all water sources (well, pond, river, etc).
+// - tileParameter is ignored when tileToLookFor = "waterSource"
+// - numTilesToSearch specify how many tiles to search. If not used, then defauts to 500 tiles
+// - locationOnly when 1 returns only the location, when 0 returns the full path
+searchForTile = function(tileToLookFor, tileParameter, numTilesToSearch, locationOnly, startPos)
+	if tileParameter == null then
+		tileParameter = "something"
+	end if
 	if numTilesToSearch == null then 
 		searchLimit = 500
 	else
@@ -217,13 +221,19 @@ searchForTile = function(tileToLookFor, tileParameter, numTilesToSearch, startPo
 	else
 		startNode = [me.position.x, me.position.y]
 	end if
+	if locationOnly == null then
+		locationOnly = 0
+	end if
     frontier = []
     frontier.push(startNode)
-    checkedNode = {}
-    checkedNode.push(startNode)
+	distance = {}
+	distance.push(startNode)
+	distance[startNode] = 0
+	foundLocation = null
     searched = 0
 	numOfLoop = 0
-    while frontier // while there's still tiles to search
+	loop = 1
+    while frontier and loop // while there's still tiles to search
 		if numOfLoop>globals.numOfLoopToWait then
 			numOfLoop = 0
 			wait(globals.waitTime)
@@ -238,55 +248,169 @@ searchForTile = function(tileToLookFor, tileParameter, numTilesToSearch, startPo
         // ****** this can be optimize to not check previously checked location
         neighborTiles = neighbors(currentNode) //save coordinate of the neihboring tiles
         for i in range(0,neighborTiles.len-1) //check tile around current node
-            if checkedNode.hasIndex(neighborTiles[i]) then // if node already check, continue to next loop
+            if distance.hasIndex(neighborTiles[i]) then // if node already check, continue to next loop
                 continue
             end if
-		
-            if (farm.tile(neighborTiles[i][0],neighborTiles[i][1])) then // if tile has info
-			
+			x = neighborTiles[i][0]
+			y = neighborTiles[i][1]
+            if (farm.tile(x,y)) then // if tile has info
+
 				// this if block is to make sure the path to the tile is reachable
-				if (farm.tile(neighborTiles[i][0],neighborTiles[i][1]).hasIndex("passable")) then
-					if (farm.tile(neighborTiles[i][0],neighborTiles[i][1]).passable == 0) then
+				if (farm.tile(x,y).hasIndex("passable")) then
+					if (farm.tile(x,y).passable == 0) then
 						//if tile is what we're looking for then do nothing (loop continues as normal)
-						if farm.tile(neighborTiles[i][0],neighborTiles[i][1]).hasIndex(tileToLookFor) then
-							if farm.tile(neighborTiles[i][0],neighborTiles[i][1])[tileToLookFor] == tileParameter then
+						if farm.tile(x,y).hasIndex(tileToLookFor) then
+							if farm.tile(x,y)[tileToLookFor] == tileParameter then
 								// do nothing and continue loop as usual
 							else
 								continue
 							end if
+							
+						// next two else if statement is for special case for finding water
+						else if (tileToLookFor == "waterSource" and farm.tile(x,y)["name"] == "Water") then
+							// do nothing and continue loop as usual
+						else if (tileToLookFor == "waterSource" and farm.tile(x,y)["name"] == "Well") then
+							//  do nothing and continue loop as usual
+						// next five else if statement is for special case for debris
+						else if ((tileToLookFor == "debris" or tileToLookFor == "debrisAndTrees") and (farm.tile(x,y).hasIndex("stump")==1 and farm.tile(x,y)["stump"] == 1)) then
+							//  do nothing and continue loop as usual
+						else if (tileToLookFor == "debrisAndTrees" and farm.tile(x,y)["name"] == "Tree") then
+							//  do nothing and continue loop as usual
+						else if ((tileToLookFor == "debris" or tileToLookFor == "debrisAndTrees") and farm.tile(x,y)["name"] == "Twig") then
+							//  do nothing and continue loop as usual
+						else if ((tileToLookFor == "debris" or tileToLookFor == "debrisAndTrees") and farm.tile(x,y)["name"] == "Stone") then
+							//  do nothing and continue loop as usual
+						else if ((tileToLookFor == "debris" or tileToLookFor == "debrisAndTrees") and farm.tile(x,y)["name"] == "Weeds") then
+							//  do nothing and continue loop as usual
 						else
 							continue
 						end if
 					end if
 					// also skip bush since it's shown as passable but it's not
-					if (farm.tile(neighborTiles[i][0],neighborTiles[i][1]).hasIndex("type")) then
-						if farm.tile(neighborTiles[i][0],neighborTiles[i][1])["type"] == "Bush" then
+					if (farm.tile(x,y).hasIndex("type")) then
+						if farm.tile(x,y)["type"] == "Bush" then
 							continue
 						end if
 					end if
 					// some buildings are passable but should not be
-					if (farm.tile(neighborTiles[i][0],neighborTiles[i][1]).hasIndex("type")) then
-						if farm.tile(neighborTiles[i][0],neighborTiles[i][1])["type"] == "Building" then
-							if (farm.tile(neighborTiles[i][0],neighborTiles[i][1]).name != tileParameter) then continue
+					if (farm.tile(x,y).hasIndex("name")) then
+						if farm.tile(x,y)["name"] == "Building" then
+							continue
 						end if
 					end if
 				end if
 			
-                if (farm.tile(neighborTiles[i][0],neighborTiles[i][1]).hasIndex(tileToLookFor)) then
-                    if (farm.tile(neighborTiles[i][0],neighborTiles[i][1])[tileToLookFor] == tileParameter) then
-                        return [neighborTiles[i][0],neighborTiles[i][1]]
-                    end if
-                end if
+				//normal usage
+                if (farm.tile(x,y).hasIndex(tileToLookFor) and farm.tile(x,y)[tileToLookFor] == tileParameter) then
+                        foundLocation = [x,y]
+						loop = 0
+				// special case for "waterSource"
+				else if (tileToLookFor == "waterSource" and farm.tile(x,y).hasIndex("name")) then
+						if (farm.tile(x,y)["name"] == "Water") then
+							world.chat("Water source found")
+							foundLocation = [x,y]
+							loop = 0
+						else if (farm.tile(x,y)["name"] == "Well") then
+							world.chat("Well water found")
+							foundLocation = [x,y]
+							loop = 0
+						end if
+				// special case for "debris" and "debrisAndTrees"
+				else if (tileToLookFor == "debris" or tileToLookFor == "debrisAndTrees") then
+				
+					if (farm.tile(x,y).hasIndex("stump") and farm.tile(x,y)["stump"] == 1) then
+							foundLocation = [x,y]
+							loop = 0
+					else if (farm.tile(x,y).hasIndex("name")) then
+						if (farm.tile(x,y)["name"] == "Tree" and tileToLookFor == "debrisAndTrees") then
+							foundLocation = [x,y]
+							loop = 0
+						else if (farm.tile(x,y)["name"] == "Twig") then
+							foundLocation = [x,y]
+							loop = 0
+						else if (farm.tile(x,y)["name"] == "Stone") then
+							foundLocation = [x,y]
+							loop = 0
+						else if (farm.tile(x,y)["name"] == "Weeds") then
+							foundLocation = [x,y]
+							loop = 0
+						end if
+					end if
+				end if
             end if
 
-            if not checkedNode.hasIndex(neighborTiles[i]) then // 
-                checkedNode.push(neighborTiles[i])
-                frontier.push(neighborTiles[i])
-            end if
-        
+			if not distance.hasIndex([x,y]) then
+                frontier.push([x,y])
+				distance[[x,y]] = distance[currentNode] + 1
+			end if
         end for
     end while
+	// create shortest path to location
+	if foundLocation==null then return null
+	if locationOnly==1 then return foundLocation
+	path = []
+	path.insert(0,foundLocation)
+	dist = distance[foundLocation] - 1
+	currentNode = foundLocation
+	while dist > 0
+		wait(0.001)
+		neighborTiles = neighbors(currentNode)
+		for i in range(0,neighborTiles.len-1) //check neighboring tiles for the next tile
+			if (distance.hasIndex(neighborTiles[i]) and distance[neighborTiles[i]]==dist) then
+				path.push(neighborTiles[i])
+				currentNode = neighborTiles[i]
+				dist = dist - 1
+			end if
+		end for
+	end while
+	return path
 end function
+
+//******************************************************
+// uses BFS (call to searchForTile function) to find path then make bot go to location
+// set stopBeforeLastNode = 0 for normal pathing, set stopBeforeLastNode = 1 to stop before final node.
+// stopBeforeLastNode is useful for pathing to water source, trees, bins, ect.
+
+me.bfsTo = function(tileToLookFor, tileParameter, numTilesToSearch, stopBeforeLastNode)
+    maxTries = 5
+    numOfTries = 0
+    startPos = [me.position.x, me.position.y ]
+    
+    coordinateList = []
+    coordinate = []
+	coordinateList = searchForTile(tileToLookFor, tileParameter, numTilesToSearch)
+	if coordinateList == null then
+		notFound = 1
+		return notFound
+	end if
+    while coordinateList
+        coordinate = coordinateList.pop
+        if stopBeforeLastNode and coordinateList.len==0 then 
+            break // stop before the last node if enabled
+        end if
+        me.goto(coordinate[0],coordinate[1])
+        //check to see if blocked by object and recalculate path
+        if me.position.x != coordinate[0] or me.position.y != coordinate[1] then
+            wait 0.1
+            coordinateList = searchForTile(tileToLookFor, tileParameter, numTilesToSearch)
+            numOfTries = numOfTries + 1
+            if numOfTries >= maxTries then break
+        end if
+		if key.pressed("end") then break
+    end while
+    if stopBeforeLastNode then  //make bot turn towards the destination
+        if (me.position.x - coordinate[0]>0) then 
+            me.turnWest
+        else if ((me.position.x - coordinate[0])<0) then 
+            me.turnEast
+        else if ((me.position.y - coordinate[1])>0) then 
+            me.turnNorth
+        else if ((me.position.y - coordinate[1])<0) then 
+            me.turnSouth
+        end if
+    end if;
+end function
+
 //**********************************************************************************
 //**These Functions are used to calculate heuristics for the pathfinding algorithm**
 //**********************************************************************************
@@ -306,9 +430,8 @@ end function
     end function
 //**********************************************************************************
 pathfinding = function (startNode, endNode)
-    //implementation of A* pathfinding algorithm. 
+    //implementation of A* pathfinding algorithm. Returns path from startNode to endNode
     //reference: https://www.redblobgames.com/pathfinding/a-star/introduction.html
-	
 	//check if coordinate is valid
 	if(startNode isa list and endNode isa list) then
 		 //continue as normal
@@ -391,6 +514,7 @@ pathfinding = function (startNode, endNode)
     return result
 end function
 //**********************************************
+// uses A* (call to pathfinding function) to find path then make bot go to location
 // set stopBeforeLastNode = 0 for normal pathing, set stopBeforeLastNode = 1 to stop before final node.
 // stopBeforeLastNode is useful for pathing to water source, trees, bins, ect.
 me.pathTo = function(endPos,stopBeforeLastNode)
@@ -434,37 +558,12 @@ end function
 //**********************************************
 me.fetchWater = function
 	world.chat( "searching for water" )
-	globals.waterLocation = searchForTile("name","Water",2000)
-	globals.wellLocation = searchForTile("name","Well",2000)
+	notFound = me.bfsTo("waterSource",1,3000,1)
 
-	if globals.waterLocation!=null or globals.wellLocation!=null then
-		if globals.waterLocation!=null then 
-			waterPath = pathfinding([me.position.x, me.position.y],globals.waterLocation)
-		end if
-		if globals.wellLocation!=null then 
-			wellPath = pathfinding([me.position.x, me.position.y],globals.wellLocation)
-		end if
-		// choose the closest available water source
-		if globals.waterLocation!=null and globals.wellLocation!=null then
-			if waterPath.len<wellPath.len then
-				world.chat( "Generic Water Found" )
-				globals.seletectedWaterLocation =  globals.waterLocation
-			else
-				world.chat( "Well Water Found")
-				globals.seletectedWaterLocation = globals.wellLocation
-			end if
-		else if globals.waterLocation!=null then
-			world.chat( "Generic Water Found" )
-			globals.seletectedWaterLocation =  globals.waterLocation
-		else if globals.wellLocation!=null then
-			world.chat( "Well Water Found" )
-			globals.seletectedWaterLocation = globals.wellLocation
-		end if
-		
-		me.pathTo(globals.seletectedWaterLocation,1)
-		me.water
-	else
+	if notFound then
 		world.chat("No water source found nearby")
+	else
+		me.water
 	end if
 end function
 //**********************************************
@@ -489,16 +588,15 @@ waterField = function
     while (loop)
 		wait(0.01)
         //if there is no water in the watering can
-        if me.inventory[wateringCanIndex].waterLeft == 0 then
+        if me.inventory[wateringCanIndex].waterLeft <= 3 then
             state = "fetchWater"
         end if
     
         if state == "searchDry" then
-            location = searchForTile("dry",1,1000)
-            if location == null then 
+            notFound = me.bfsTo("dry",1,1000,1)
+            if notFound then 
                 state = "cleanUp"
             else
-                me.pathTo(location,1)
 				direction = me.facing
                 state = "watering"
             end if
@@ -532,14 +630,55 @@ waterField = function
 					if me.twohead["dry"] == 1 then
 						me.forward
 					else
-						state = "searchDry"
+						state = "searchDry"//state = "corners"
 					end if
 				else
-					state = "searchDry"
+					state = "searchDry"//state = "corners"
 				end if
 			else
-				state = "searchDry"
+				state = "searchDry"//state = "corners"
 			end if
+		end if
+		// search the diagonals around the robot for dry spots
+		if state == "corners" then
+			currentPosition = [me.position.x,me.position.y]
+			cornerPaths = []
+			if farm.tile(currentPosition[0]+1,currentPosition[1]-1) then
+				if farm.tile(currentPosition[0]+1,currentPosition[1]-1).hasIndex("dry") then
+					if farm.tile(currentPosition[0]+1,currentPosition[1]-1)["dry"]==1 then
+						cornerPaths.push([currentPosition[0]+1,currentPosition[1]-1])
+					end if
+				end if
+			end if
+			if farm.tile(currentPosition[0]+1,currentPosition[1]+1) then
+				if farm.tile(currentPosition[0]+1,currentPosition[1]+1).hasIndex("dry") then
+					if farm.tile(currentPosition[0]+1,currentPosition[1]+1)["dry"]==1 then
+						cornerPaths.push([currentPosition[0]+1,currentPosition[1]+1])
+					end if
+				end if
+			end if
+			if farm.tile(currentPosition[0]-1,currentPosition[1]-1) then
+				if farm.tile(currentPosition[0]-1,currentPosition[1]-1).hasIndex("dry") then
+					if farm.tile(currentPosition[0]-1,currentPosition[1]-1)["dry"]==1 then
+						cornerPaths.push([currentPosition[0]-1,currentPosition[1]-1])
+					end if
+				end if
+			end if
+			if farm.tile(currentPosition[0]-1,currentPosition[1]+1) then
+				if farm.tile(currentPosition[0]-1,currentPosition[1]+1).hasIndex("dry") then
+					if farm.tile(currentPosition[0]-1,currentPosition[1]+1)["dry"]==1 then
+						cornerPaths.push([currentPosition[0]-1,currentPosition[1]+1])
+					end if
+				end if
+			end if
+			if cornerPaths.len > 0 then
+				while cornerPaths.len > 0
+					me.pathTo(cornerPaths.pop,1)
+					me.water
+				end while
+				me.pathTo(currentPosition)
+			end if
+			state = "searchDry"
 		end if
         
         if state == "fetchWater" then
@@ -583,63 +722,33 @@ clearField = function
     startPos = [me.position.x, me.position.y]
 	world.chat("Clearing Land")
 	loop = 1
-	state = "clearing" //name:Twig, stump:1, name:Weeds, name:Stone, name:Tree
+	state = "clearing"
 	location = null
 	area = [4,10,20,40,100,500,1000,3000,5000]
 	i = 0
-	numOfStages = 6
 	while loop
 		wait(0.01)
 		// key press to determine what to clear
 		if key.pressed("up") then
-			globals.clearHoeDirt = 0
-			globals.clearTree = 0
-			world.chat("Clearing debris only")
+			if (globals.clearMode != "debris") then world.chat("Clearing debris only")
+			globals.clearMode = "debris"
 		end if
-		if key.pressed("left") then
-			if globals.clearTree == 0 then world.chat("And trees")
-			globals.clearTree = 1
-		end if
-		if key.pressed("right") then
-			if globals.clearHoeDirt == 0 then world.chat("And tilled lands")
-			globals.clearHoeDirt = 1
+		if key.pressed("down") then
+			if (globals.clearMode != "debrisAndTrees") then world.chat("And trees")
+			globals.clearMode = "debrisAndTrees"
 		end if
 		if key.pressed("end") then
-			globals.clearHoeDirt = 0
 			globals.clearTree = 0
 			world.chat("Stopped clearing field")
 			break
 		end if
 		
 		if state == "clearing" then
-			if location == null then 
-                location = searchForTile("stump",1,area[i])
-            end if
-			if location == null then 
-				if clearTree then location = searchForTile("name","Tree",area[i])
-            end if
-			if location == null then
-				location = searchForTile("name","Twig",area[i])
-			end if
-            if location == null then 
-                location = searchForTile("name","Stone",area[i])
-            end if
-			if location == null then 
-                location = searchForTile("name","Weeds",area[i])
-            end if
-			if location == null then 
-                if clearHoeDirt then location = searchForTile("type","HoeDirt",area[i])
-            end if
-			if location != null then
-				i = 0
-                me.pathTo(location,1)
-                me.clearAhead
-				location = null
-            else
-				i = i+1
-			end if
-			if i>numOfStages then
+            notFound = me.bfsTo(globals.clearMode,1,5000,1)
+			if notFound then
 				state = "cleanUp"
+            else
+                me.clearAhead
 			end if
 		end if
 		
@@ -685,7 +794,7 @@ remoteControl = function(onOff)
 		while(1)
 			wait (0.02)
 		
-			if me.inventory[wateringCanIndex].waterLeft == 0 then
+			if me.inventory[wateringCanIndex].waterLeft <= 3 then
                 me.fetchWater
             end if
 		
@@ -792,15 +901,17 @@ tillMode = function
 	confirm = 0
 	firstCorner = null
 	secondCorner = null
+	locationOnly = 1
+	areaOfSearch = 5000
 	while(1)
 		wait(0.1)
 		if key.pressed("left") then 
-			firstCorner = searchForTile("name",me.owner,5000)
+			firstCorner = searchForTile("name",me.owner,areaOfSearch,locationOnly)
 			world.chat("Till start location selected at" + firstCorner)
 			wait(1)
 		end if
 		if key.pressed("right") then 
-			secondCorner = searchForTile("name",me.owner,5000)
+			secondCorner = searchForTile("name",me.owner,areaOfSearch,locationOnly)
 			world.chat("Till end location selected at" + secondCorner)
 			wait(1)
 		end if
@@ -851,8 +962,7 @@ me.helpInstruction = function
 	wait(10)
 	world.chat("F6: Clear land, while robot in this mode:")
 	world.chat("  UP key: clear debris only (default)")
-	world.chat("  LEFT key: include tree")
-	world.chat("  RIGHT key: include tilled land")
+	world.chat("  DOWN key: include tree")
 	wait(10)
 	world.chat("END key: Terminate most of these programs")
 	world.chat("HOME key: Go to location where bot was placed down")
@@ -861,7 +971,7 @@ end function
 
 if me.isBot then
 	homePosition = [me.position.x,me.position.y]
-	waterField
+	//waterField
 	world.chat("Hold H for instruction")
 	while(1)
 		wait(0.3)
@@ -871,9 +981,8 @@ if me.isBot then
 		end if
 		if key.pressed("f1") then waterField
 		if key.pressed("f2") then
-			characterLocation = searchForTile("name",me.owner,5000)
-			world.chat("Going to " + me.owner +" at location " + characterLocation)
-			me.pathTo(characterLocation,1)
+			world.chat("Going to " + me.owner)
+			me.bfsTo("name",me.owner,5000,1)
 			me.turnSouth
 		end if
 		if key.pressed("f3") then remoteControl(1)
