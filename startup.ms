@@ -583,6 +583,8 @@ waterField = function
     startPos = [me.position.x, me.position.y]
     wateringCanIndex = searchInventory("type","WateringCan")
     state = "searchDry"
+	searchCorner = 0
+	direction = me.facing
 	world.chat("Watering field")
     loop = 1
     while (loop)
@@ -615,7 +617,7 @@ waterField = function
 					end if
 				end if
 			end for
-			// keeps the robot facing the direction that it was searching for. 
+			//keeps the robot facing the direction that it was searching for. 
 			if direction == 0 then // facing north
 				me.turnNorth
 			else if direction == 1 then // facing east
@@ -629,16 +631,30 @@ waterField = function
 				if me.twohead.hasIndex("dry") then
 					if me.twohead["dry"] == 1 then
 						me.forward
+						searchCorner = 1
 					else
-						state = "searchDry"//state = "corners"
+						state = "intermediate"
+						// world.chat("searching 0")
 					end if
 				else
-					state = "searchDry"//state = "corners"
+					state = "intermediate"
+				// world.chat("searching 1")
 				end if
 			else
-				state = "searchDry"//state = "corners"
+				state = "intermediate"
+			// world.chat("searching 2")
 			end if
 		end if
+		
+		if state == "intermediate" then
+			if searchCorner then
+				state = "corners"
+				searchCorner = 0
+			else
+				state = "searchDry"
+			end if
+		end if
+		
 		// search the diagonals around the robot for dry spots
 		if state == "corners" then
 			currentPosition = [me.position.x,me.position.y]
@@ -672,6 +688,7 @@ waterField = function
 				end if
 			end if
 			if cornerPaths.len > 0 then
+				me.forward
 				while cornerPaths.len > 0
 					me.pathTo(cornerPaths.pop,1)
 					me.water
@@ -939,7 +956,24 @@ tillMode = function
 	end while
 end function
 
-
+me.rename = function
+	h = farm["height"]
+	w = farm["width"]
+	myPosition = [me.position.x,me.position.y]
+	botCount = 0
+	for i in range (0,w)
+		wait(0.001)
+		for j in range(0,h)
+			if myPosition == [i,j] then
+				me.name = "Bot"+botCount
+				return
+			end if
+			if farm.tile(i,j)!=null and farm.tile(i,j).indexOf("BotObject")!=null then
+				botCount = botCount + 1
+			end if
+		end for
+	end for
+end function
 //**********************************************
 //**********************************************
 // Auto start this every morning or after robot restarts
@@ -970,6 +1004,7 @@ me.helpInstruction = function
 end function
 
 if me.isBot then
+	me.rename
 	homePosition = [me.position.x,me.position.y]
 	//waterField
 	world.chat("Hold H for instruction")
