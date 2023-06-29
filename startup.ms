@@ -974,9 +974,7 @@ me.rename = function
 		end for
 	end for
 end function
-//**********************************************
-//**********************************************
-// Auto start this every morning or after robot restarts
+
 me.helpInstruction = function
 	world.chat("HOLD KEY FOR UP TO 1/2 SEC TO ACTIVATE")
 	world.chat("F1: Water Field")
@@ -1003,11 +1001,17 @@ me.helpInstruction = function
 	world.chat("Hold H to repeat these instructions")
 end function
 
+//**********************************************
+//**********************************************
+// Auto start this every morning or after robot restarts
+
 if me.isBot then
 	me.rename
 	homePosition = [me.position.x,me.position.y]
 	//waterField
-	world.chat("Hold H for instruction")
+	if me.name == "Bot0" then // only the first bot needs to announce the instruction
+		world.chat("Hold H for instruction")
+	end if
 	while(1)
 		wait(0.3)
 		if key.pressed("home") then
@@ -1020,9 +1024,11 @@ if me.isBot then
 			me.bfsTo("name",me.owner,5000,1)
 			me.turnSouth
 		end if
-		if key.pressed("f3") then remoteControl(1)
-		if key.pressed("f5") then tillMode 
+		if key.pressed("f3") and me.name=="Bot0" then remoteControl(1)
+		if key.pressed("f5") and me.name=="Bot0" then tillMode 
 		if key.pressed("f6") then clearField
-		if key.pressed("h") then me.helpInstruction
+		if me.name == "Bot0" then
+			if key.pressed("h") then me.helpInstruction
+		end if
 	end while
 end if
